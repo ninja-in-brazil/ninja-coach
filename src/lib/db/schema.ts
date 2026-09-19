@@ -6,10 +6,10 @@ const msTimestamp = (name: string) =>
     .$defaultFn(() => new Date());
 export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(),
-  title: text("title").notNull().default("New session"),
-  kind: text("kind", { enum: ["open", "checkin"] })
+  title: text("title").notNull().default("New daily checkin"),
+  kind: text("kind", { enum: ["weekly_checkin", "daily_checkin"] })
     .notNull()
-    .default("open"),
+    .default("daily_checkin"),
   createdAt: msTimestamp("created_at"),
   updatedAt: msTimestamp("updated_at"),
 });

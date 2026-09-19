@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart, type UIMessage } from "ai";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -124,7 +124,7 @@ function formatToolOutput(
 
   if (name === "create_todo") {
     const match = text.match(/^Created todo: (.+?) \(id:/);
-    return match ? `Added todo: ${match[1]}` : text;
+    return match ? `Created todo: ${match[1]}` : text;
   }
 
   if (name === "update_todo") {
@@ -133,14 +133,17 @@ function formatToolOutput(
   }
 
   if (name === "remove_todo") {
-    if (text.startsWith("Removed todo")) return "Removed todo";
-    return text.length > 100 ? text.slice(0, 99) + "…" : text;
+    const match = text.match(/^Removed todo: (.+)/);
+    return match ? `Removed todo: ${match[1]}` : text;
   }
 
   return text.length > 100 ? text.slice(0, 99) + "…" : text;
 }
 
 export function Chat({ sessionId, initialMessages }: ChatProps) {
+  const searchParams = useSearchParams();
+  const autostartHandled = useRef(false);
+
   const { messages, sendMessage, status, stop, regenerate, error } = useChat({
     id: sessionId,
     messages: initialMessages,
@@ -161,8 +164,38 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
   const canSend = status === "ready" && input.trim().length > 0;
 
   useEffect(() => {
+    if (autostartHandled.current) return;
+    if (searchParams.get("autostart") === "1" && messages.length === 0 && status === "ready") {
+      autostartHandled.current = true;
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("autostart");
+        window.history.replaceState(null, "", url.toString());
+      }
+      sendMessage({ text: "Hey Coach! How's it going?" });
+    }
+  }, [searchParams, messages.length, status, sendMessage]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView();
   }, [messages, status]);
+
+  const handleStartCheckIn = async (
+    kind: "weekly_checkin" | "daily_checkin",
+    title: string,
+  ) => {
+    if (status !== "ready") return;
+    try {
+      await fetch(`/api/sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, title }),
+      });
+    } catch (e) {
+      console.error("Failed to update session kind", e);
+    }
+    sendMessage({ text: "Hey Coach! How's it going?" });
+  };
 
   function send() {
     const text = input.trim();
@@ -195,12 +228,24 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
               Your coach is ready. Share a goal, report on last week,
               or just say hi to get started.
             </p>
-            <Link
-              href="/checkin"
-              className="mt-3 inline-block font-medium text-zinc-900 underline underline-offset-4 dark:text-zinc-100"
-            >
-              Start weekly check-in
-            </Link>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleStartCheckIn("weekly_checkin", "Weekly check-in")}
+                disabled={isWorking}
+                className="cursor-pointer rounded-xl border border-zinc-300 bg-zinc-50 px-3.5 py-2 text-xs font-medium text-zinc-900 shadow-xs hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              >
+                Start weekly check-in
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStartCheckIn("daily_checkin", "Daily check-in")}
+                disabled={isWorking}
+                className="cursor-pointer rounded-xl border border-zinc-300 bg-zinc-50 px-3.5 py-2 text-xs font-medium text-zinc-900 shadow-xs hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              >
+                Start daily check-in
+              </button>
+            </div>
           </div>
         )}
         {messages.map((message) => {

@@ -26,5 +26,9 @@ export function getModel(): LanguageModel {
     );
   }
 
-  return OPENAI.create(apiKey, process.env.AI_MODEL?.trim() || OPENAI.defaultModel, baseUrl);
+  return OPENAI.create(
+    apiKey,
+    process.env.AI_MODEL?.trim() || OPENAI.defaultModel,
+    baseUrl,
+  ) as unknown as LanguageModel;
 }

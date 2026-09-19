@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     default: "Ninja Coach",
     template: "%s | Ninja Coach",
   },
-  description: "Your AI life coach — weekly check-ins on goals and progress.",
+  description: "Your AI life coach — daily and weekly check-ins on goals and progress.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -46,10 +46,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               New chat
             </Link>
             <Link
-              href="/checkin"
+              href="/daily-checkin"
               className="rounded-xl border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
             >
-              Check-in
+              Daily
+            </Link>
+            <Link
+              href="/weekly-checkin"
+              className="rounded-xl border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              Weekly
             </Link>
           </nav>
         </div>
