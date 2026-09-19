@@ -6,7 +6,7 @@ const msTimestamp = (name: string) =>
     .$defaultFn(() => new Date());
 export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(),
-  title: text("title").notNull().default("New session"),
+  title: text("title").notNull().default("New daily checkin"),
   kind: text("kind", { enum: ["weekly_checkin", "daily_checkin"] })
     .notNull()
     .default("daily_checkin"),

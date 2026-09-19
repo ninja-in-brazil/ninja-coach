@@ -26,7 +26,7 @@ export function createSession(input: {
     .insert(sessions)
     .values({
       id: randomUUID(),
-      title: input.title ?? "New session",
+      title: input.title ?? "New daily checkin",
       kind: input.kind ?? "daily_checkin",
     })
     .returning()

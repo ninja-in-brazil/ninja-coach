@@ -4,7 +4,7 @@ import { createSession } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function CheckInPage() {
+export default function WeeklyCheckInPage() {
   const session = createSession({
     kind: "weekly_checkin",
     title: "Weekly check-in",
