@@ -20,6 +20,7 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.51",
     "@ai-sdk/groq": "^4.0.31",
+    "@ai-sdk/openai": "^4.0.71",
     "@ai-sdk/react": "^4.0.82",
     "@huggingface/transformers": "^4.2.0",
     "ai": "^7.0.79",
