@@ -113,11 +113,10 @@ export function SessionsSidebar() {
                 <li key={session.id}>
                   <Link
                     href={href}
-                    className={`block rounded-xl px-2 py-2 transition-colors ${
-                      active
+                    className={`block rounded-xl px-2 py-2 transition-colors ${active
                         ? "bg-zinc-100 dark:bg-zinc-800"
                         : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="min-w-0 truncate text-sm font-medium">
@@ -133,14 +132,6 @@ export function SessionsSidebar() {
           </ul>
         )}
       </nav>
-      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
-        <Link
-          href="/checkin"
-          className="block rounded-xl px-2 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          Weekly check-in
-        </Link>
-      </div>
     </aside>
   );
 }
