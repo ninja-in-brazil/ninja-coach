@@ -4,10 +4,10 @@ import { createSession } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
-export default function CheckInPage() {
+export default function DailyCheckInPage() {
   const session = createSession({
-    kind: "weekly_checkin",
-    title: "Weekly check-in",
+    kind: "daily_checkin",
+    title: "Daily check-in",
   });
   redirect(`/chat/${session.id}?autostart=1`);
 }

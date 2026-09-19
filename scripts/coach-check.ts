@@ -36,7 +36,8 @@ async function main() {
     // Import after DATABASE_PATH is set so the singleton picks up the temp DB.
     const {
       COACH_PERSONA,
-      CHECKIN_STRUCTURE,
+      WEEKLY_CHECKING_STRUCTURE,
+      DAILY_CHECKING_STRUCTURE,
     } = await import("../src/lib/coach/persona");
     const { buildContext } = await import("../src/lib/memory");
     const {
@@ -45,54 +46,60 @@ async function main() {
       getMostRecentSession,
     } = await import("../src/lib/db/queries");
 
-    // 1. Session kinds persist; "open" is the default.
-    const openSession = createSession();
-    assert.equal(openSession.kind, "open");
-    const checkinSession = createSession({
-      kind: "checkin",
+    // 1. Session kinds persist; "daily_checkin" is the default.
+    const dailySession = createSession();
+    assert.equal(dailySession.kind, "daily_checkin");
+    const weeklySession = createSession({
+      kind: "weekly_checkin",
       title: "Weekly check-in",
     });
-    assert.equal(checkinSession.kind, "checkin");
+    assert.equal(weeklySession.kind, "weekly_checkin");
 
-    // 2. Check-in structure injected; no recap while nothing has history.
-    const soloCtx = await buildContext(checkinSession.id);
-    assert.ok(soloCtx.system.includes(CHECKIN_STRUCTURE));
+    // 2. Weekly check-in structure injected; no recap while nothing has history.
+    const soloCtx = await buildContext(weeklySession.id);
+    assert.ok(soloCtx.system.includes(WEEKLY_CHECKING_STRUCTURE));
     assert.ok(!soloCtx.system.includes("Since last session"));
-    console.log("[ok] check-in structure injected, no empty recap");
+    console.log("[ok] weekly check-in structure injected, no empty recap");
+
+    // 3. Daily check-in structure injected; no recap while nothing has history.
+    const soloDailyCtx = await buildContext(dailySession.id);
+    assert.ok(soloDailyCtx.system.includes(DAILY_CHECKING_STRUCTURE));
+    assert.ok(!soloDailyCtx.system.includes("Since last session"));
+    console.log("[ok] daily check-in structure injected, no empty recap");
 
     // getMostRecentSession excludes the current one and picks latest activity.
     addMessage({
-      sessionId: checkinSession.id,
+      sessionId: weeklySession.id,
       role: "user",
       content: "kickoff",
     });
-    assert.equal(getMostRecentSession(checkinSession.id)?.id, openSession.id);
+    assert.equal(getMostRecentSession(weeklySession.id)?.id, dailySession.id);
     console.log("[ok] session kinds persist, recent-session lookup works");
 
-    // 2. Persona is always present; structure/recap are check-in-only.
+    // 4. Persona is always present with tool hints.
     addMessage({
-      sessionId: openSession.id,
+      sessionId: dailySession.id,
       role: "user",
-      content: "Just checking in about my week.",
+      content: "Just checking in about my day.",
     });
-    const openCtx = await buildContext(openSession.id);
-    assert.ok(openCtx.system.startsWith(COACH_PERSONA));
-    assert.ok(/ask good questions/i.test(openCtx.system));
-    assert.ok(/unprompted/i.test(openCtx.system));
-    assert.ok(!openCtx.system.includes(CHECKIN_STRUCTURE));
-    assert.ok(!openCtx.system.includes("Since last session"));
+    const dailyCtx = await buildContext(dailySession.id);
+    assert.ok(dailyCtx.system.startsWith(COACH_PERSONA));
+    assert.ok(/ask good questions/i.test(dailyCtx.system));
+    assert.ok(/unprompted/i.test(dailyCtx.system));
+    assert.ok(!dailyCtx.system.includes(WEEKLY_CHECKING_STRUCTURE));
+    assert.ok(dailyCtx.system.includes(DAILY_CHECKING_STRUCTURE));
     assert.ok(
-      /search_memory/i.test(openCtx.system),
+      /search_memory/i.test(dailyCtx.system),
       "persona should mention search_memory tool",
     );
     assert.ok(
-      /list_goals/i.test(openCtx.system),
+      /list_goals/i.test(dailyCtx.system),
       "persona should mention list_goals tool",
     );
-    console.log("[ok] open sessions get persona with tool hints, no check-in flow");
+    console.log("[ok] daily sessions get persona with tool hints and daily flow");
 
-    // 3. Recap grounded in the most recent prior session's messages.
-    const recapCheckin = createSession({ kind: "checkin", title: "This week" });
+    // 5. Recap grounded in the most recent prior session's messages.
+    const recapCheckin = createSession({ kind: "weekly_checkin", title: "This week" });
     const prior = createSession({ title: "Last week" });
     addMessage({
       sessionId: prior.id,
@@ -113,7 +120,7 @@ async function main() {
     );
     console.log("[ok] recap grounds progress in most recent session");
 
-    // 5. Compacted prior sessions recap via their summary, not raw messages.
+    // 6. Compacted prior sessions recap via their summary, not raw messages.
     const { db } = await import("../src/lib/db");
     const { randomUUID } = await import("node:crypto");
     const { summaries } = await import("../src/lib/db/schema");
@@ -134,7 +141,7 @@ async function main() {
     });
 
     const summaryCheckin = createSession({
-      kind: "checkin",
+      kind: "weekly_checkin",
       title: "Next week",
     });
     const summaryCtx = await buildContext(summaryCheckin.id);
@@ -145,19 +152,31 @@ async function main() {
     );
     console.log("[ok] recap prefers compacted summary over transcript");
 
-    // 6. Structure covers the three-part weekly flow.
+    // 7. Structure covers the flows.
     for (const part of [
       "current focus",
       "active goals",
       "wins, misses",
     ] as const) {
       assert.ok(
-        CHECKIN_STRUCTURE.toLowerCase().includes(part),
-        `structure missing "${part}"`,
+        WEEKLY_CHECKING_STRUCTURE.toLowerCase().includes(part),
+        `weekly structure missing "${part}"`,
       );
     }
-    assert.match(CHECKIN_STRUCTURE, /one question per message/i);
-    console.log("[ok] check-in structure covers now/goals/progress");
+    assert.match(WEEKLY_CHECKING_STRUCTURE, /one question per message/i);
+
+    for (const part of [
+      "top priorities",
+      "blockers or quick wins",
+      "commitments for today",
+    ] as const) {
+      assert.ok(
+        DAILY_CHECKING_STRUCTURE.toLowerCase().includes(part),
+        `daily structure missing "${part}"`,
+      );
+    }
+    assert.match(DAILY_CHECKING_STRUCTURE, /one question per message/i);
+    console.log("[ok] check-in structures verified");
 
     console.log("\nCoach check passed.");
   } finally {

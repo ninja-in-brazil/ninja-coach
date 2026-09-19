@@ -27,8 +27,26 @@ export function createSession(input: {
     .values({
       id: randomUUID(),
       title: input.title ?? "New session",
-      kind: input.kind ?? "open",
+      kind: input.kind ?? "daily_checkin",
     })
+    .returning()
+    .get();
+}
+
+export function updateSession(
+  id: string,
+  input: { title?: string; kind?: SessionKind },
+): Session | undefined {
+  const updates: Partial<{ title: string; kind: SessionKind; updatedAt: Date }> = {
+    updatedAt: new Date(),
+  };
+  if (input.title !== undefined) updates.title = input.title;
+  if (input.kind !== undefined) updates.kind = input.kind;
+
+  return db
+    .update(sessions)
+    .set(updates)
+    .where(eq(sessions.id, id))
     .returning()
     .get();
 }

@@ -6,7 +6,11 @@ import { generateText } from "ai";
 import { eq } from "drizzle-orm";
 
 import { getModel } from "../ai";
-import { COACH_PERSONA, CHECKIN_STRUCTURE } from "../coach/persona";
+import {
+  COACH_PERSONA,
+  DAILY_CHECKING_STRUCTURE,
+  WEEKLY_CHECKING_STRUCTURE,
+} from "../coach/persona";
 import { db } from "../db";
 import {
   getMessages,
@@ -170,8 +174,14 @@ export async function buildContext(sessionId: string): Promise<BuiltContext> {
 
   const sections = [COACH_PERSONA];
 
-  if (session?.kind === "checkin") {
-    sections.push(CHECKIN_STRUCTURE);
+  if (session?.kind === "weekly_checkin") {
+    sections.push(WEEKLY_CHECKING_STRUCTURE);
+    const recap = lastSessionRecap(sessionId);
+    if (recap) {
+      sections.push(`Since last session:\n${recap}`);
+    }
+  } else if (session?.kind === "daily_checkin") {
+    sections.push(DAILY_CHECKING_STRUCTURE);
     const recap = lastSessionRecap(sessionId);
     if (recap) {
       sections.push(`Since last session:\n${recap}`);
