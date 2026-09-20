@@ -203,9 +203,14 @@ export const coachTools = {
       "Search past coaching conversations for relevant context. Always call early in a session and when the user references something from before.",
     inputSchema: zodSchema(coachToolInputSchemas.search_memory),
     execute: async (input) => {
+      const query = input.query.trim();
+      if (!query) {
+        return "No relevant past conversations found.";
+      }
+
       let vector: number[];
       try {
-        vector = await embed(input.query, "query");
+        vector = await embed(query, "query");
       } catch (error) {
         return `Memory search failed: ${error instanceof Error ? error.message : "unknown error"}`;
       }
@@ -261,10 +266,15 @@ export const coachTools = {
       "Fetch the user's todos. Returns all open todos unless a goal id or status filter is specified. Todos are the concrete next actions tied to a goal.",
     inputSchema: zodSchema(coachToolInputSchemas.list_todos),
     execute: async (input) => {
-      const todos = listTodos({
+      let todos = listTodos({
         goalId: input.goalId ?? undefined,
         status: input.status ?? undefined,
       });
+
+      if (!input.status) {
+        todos = todos.filter((t) => t.status !== "completed");
+      }
+
       if (todos.length === 0) {
         return "No todos found.";
       }
