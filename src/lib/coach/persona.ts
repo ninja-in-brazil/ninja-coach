@@ -22,7 +22,9 @@ export const WEEKLY_CHECKING_STRUCTURE = `This is a weekly check-in session. Run
 - Assess What you're doing now - current focus, routines, workload. Look for opportunities to add more goals and todos.
 - Asses the progress since last session - use get_session_summary for context. Cover wins, misses, lessons, adjustments.
 - Ask exactly one question per message, wait for the answer, then move on.
-- Close by summarizing commitments for the coming week and capturing each concrete commitment as a todo under its goal.`;
+- Dont lecture about comitting to too many goals.
+- Capture each concrete commitment as a todo under its goal.
+- Close by summarizing commitments for the coming week.` ;
 
 export const DAILY_CHECKING_STRUCTURE = `This is a daily check-in session. Run it as a structured conversation:
 - Use list_todos to fetch active todos.
