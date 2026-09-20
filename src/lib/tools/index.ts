@@ -329,7 +329,7 @@ export const coachTools = {
 
   update_todo: tool({
     description:
-      "Update an existing todo's title, description, or status. Use when the user revises a step, starts it (in_progress), or finishes it (completed).",
+      "Update an existing todo's title, description, or status. Use when the user revises a step or finishes it (completed).",
     inputSchema: zodSchema(coachToolInputSchemas.update_todo),
     execute: async (input) => {
       const existing = getTodo(input.id);
