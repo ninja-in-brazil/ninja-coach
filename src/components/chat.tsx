@@ -7,8 +7,13 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { SessionBadge } from "@/components/session-badge";
+import { formatDate, isSameDay } from "@/lib/format";
+import type { Session } from "@/lib/db/schema";
+
 interface ChatProps {
   sessionId: string;
+  session: Session;
   initialMessages: UIMessage[];
 }
 
@@ -140,7 +145,12 @@ function formatToolOutput(
   return text.length > 100 ? text.slice(0, 99) + "…" : text;
 }
 
-export function Chat({ sessionId, initialMessages }: ChatProps) {
+export function Chat({
+  sessionId,
+  session: initialSession,
+  initialMessages,
+}: ChatProps) {
+  const [session, setSession] = useState(initialSession);
   const searchParams = useSearchParams();
   const autostartHandled = useRef(false);
 
@@ -162,6 +172,7 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
 
   const isWorking = status === "submitted" || status === "streaming";
   const canSend = status === "ready" && input.trim().length > 0;
+  const showChatUI = messages.length > 0 || isWorking;
 
   useEffect(() => {
     if (autostartHandled.current) return;
@@ -185,6 +196,12 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
     title: string,
   ) => {
     if (status !== "ready") return;
+    setSession((prev) => ({
+      ...prev,
+      kind,
+      title,
+      updatedAt: new Date(),
+    }));
     try {
       await fetch(`/api/sessions/${sessionId}`, {
         method: "PATCH",
@@ -217,7 +234,24 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {showChatUI && (
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-sm font-semibold tracking-tight">
+                {session.title}
+              </h1>
+              <SessionBadge kind={session.kind} />
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {isSameDay(new Date(session.createdAt), new Date(session.updatedAt))
+                ? formatDate(new Date(session.createdAt))
+                : `Created ${formatDate(new Date(session.createdAt))} · Last active ${formatDate(new Date(session.updatedAt))}`}
+            </p>
+          </div>
+        </div>
+      )}
       <div
         className="flex flex-1 flex-col justify-start gap-4 overflow-y-auto"
         aria-live="polite"
