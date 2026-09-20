@@ -4,8 +4,7 @@ import type { TodoWithGoal } from "@/lib/db/queries";
 import { useEffect, useState } from "react";
 
 const STATUS_COLOR: Record<TodoWithGoal["status"], string> = {
-  pending: "bg-zinc-400 dark:bg-zinc-600",
-  in_progress: "bg-amber-400 dark:bg-amber-500",
+  active: "bg-amber-400 dark:bg-amber-500",
   completed: "bg-emerald-500",
 };
 
@@ -83,7 +82,6 @@ export function TodosSidebar() {
               <span className="min-w-0 text-xs leading-5 text-zinc-700 dark:text-zinc-300">
                 <span className="block">{todo.title}</span>
                 <span className="block truncate text-[10px] text-zinc-400 dark:text-zinc-500">
-                  {todo.status === "in_progress" ? "In progress · " : ""}
                   {todo.goalTitle}
                 </span>
               </span>

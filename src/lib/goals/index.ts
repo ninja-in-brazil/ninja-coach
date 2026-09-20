@@ -26,13 +26,17 @@ export interface GoalUpdateOp {
   status?: GoalStatus;
 }
 
-export interface GoalCloseOp {
-  op: "close";
+export interface GoalCompleteOp {
+  op: "complete";
   id: string;
-  status: "completed" | "dropped";
 }
 
-export type GoalOp = GoalCreateOp | GoalUpdateOp | GoalCloseOp;
+export interface GoalDeleteOp {
+  op: "delete";
+  id: string;
+}
+
+export type GoalOp = GoalCreateOp | GoalUpdateOp | GoalCompleteOp | GoalDeleteOp;
 
 function titleKey(title: string): string {
   return title.toLowerCase().replace(/\s+/g, " ").trim();
@@ -90,14 +94,23 @@ export function applyGoalOps(ops: GoalOp[]): Goal[] {
         continue;
       }
 
-      if (!existingIds.has(op.id)) continue;
-      const row = tx
-        .update(goals)
-        .set({ status: op.status, updatedAt: new Date() })
-        .where(eq(goals.id, op.id))
-        .returning()
-        .get();
-      if (row) applied.push(row);
+      if (op.op === "complete") {
+        if (!existingIds.has(op.id)) continue;
+        const row = tx
+          .update(goals)
+          .set({ status: "completed", updatedAt: new Date() })
+          .where(eq(goals.id, op.id))
+          .returning()
+          .get();
+        if (row) applied.push(row);
+        continue;
+      }
+
+      if (op.op === "delete") {
+        if (!existingIds.has(op.id)) continue;
+        tx.delete(goals).where(eq(goals.id, op.id)).run();
+        existingIds.delete(op.id);
+      }
     }
     return applied;
   });

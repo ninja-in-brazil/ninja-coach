@@ -73,8 +73,8 @@ export function GoalsSidebar() {
             <li key={goal.id} className="flex items-start gap-2">
               <span
                 className={`mt-1 size-1.5 shrink-0 rounded-full ${
-                  goal.status === "paused"
-                    ? "bg-amber-400 dark:bg-amber-500"
+                  goal.status === "completed"
+                    ? "bg-zinc-400 dark:bg-zinc-600"
                     : "bg-emerald-500"
                 }`}
               />

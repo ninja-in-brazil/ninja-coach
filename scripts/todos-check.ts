@@ -51,15 +51,15 @@ async function main() {
       description: "Visit the shop this weekend",
     });
     assert.ok(first && second, "todos created under a real goal");
-    assert.equal(first.status, "pending");
+    assert.equal(first.status, "active");
     assert.equal(listTodos({ goalId: goal.id }).length, 2);
-    assert.equal(listTodos({ goalId: goal.id, status: "pending" }).length, 2);
+    assert.equal(listTodos({ goalId: goal.id, status: "active" }).length, 2);
     assert.equal(listTodos({ goalId: goal.id, status: "completed" }).length, 0);
     console.log("[ok] todos created + listed with goal/status filters");
 
     // Update semantics: progress through the status lifecycle.
-    const progressing = updateTodo(first.id, { status: "in_progress" });
-    assert.equal(progressing?.status, "in_progress");
+    const progressing = updateTodo(first.id, { title: "Follow training plan (week 1)" });
+    assert.equal(progressing?.title, "Follow training plan (week 1)");
     const completed = updateTodo(first.id, { title: "Finish the training plan", status: "completed" });
     assert.equal(completed?.status, "completed");
     assert.equal(completed?.title, "Finish the training plan");

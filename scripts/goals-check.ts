@@ -52,7 +52,7 @@ async function main() {
       { op: "create", title: "run a half marathon" },           // dup -> skip
       { op: "create", title: "Meal prep on Sundays" },
       { op: "update", id: "unknown-id", title: "ghost" },       // ignored
-      { op: "close", id: "unknown-id", status: "dropped" },     // ignored
+      { op: "complete", id: "unknown-id" },     // ignored
     ]);
     assert.equal(applied.length, 1);
     assert.equal(applied[0]!.title, "Meal prep on Sundays");
@@ -63,14 +63,14 @@ async function main() {
     const marathon = listGoals().find((g) => g.title === "Run a half marathon")!;
     const mealPrep = applied[0]!;
     const secondRound = applyGoalOps([
-      { op: "update", id: marathon.id, title: "Run a full marathon", status: "paused" },
-      { op: "close", id: mealPrep.id, status: "dropped" },
+      { op: "update", id: marathon.id, title: "Run a full marathon", status: "active" },
+      { op: "delete", id: mealPrep.id },
     ]);
-    assert.equal(secondRound.length, 2);
+    assert.equal(secondRound.length, 1); // delete doesn't return the row
     const afterUpdate = listGoals().find((g) => g.title === "Run a full marathon")!;
-    assert.equal(afterUpdate!.status, "paused");
-    assert.equal(listGoals().find((g) => g.id === mealPrep.id)!.status, "dropped");
-    console.log("[ok] create/update/close applied with dedup + guards");
+    assert.equal(afterUpdate!.status, "active");
+    assert.equal(listGoals().find((g) => g.id === mealPrep.id), undefined);
+    console.log("[ok] create/update/delete applied with dedup + guards");
 
     // 2. Coach tools are defined.
     const { coachTools, coachToolInputSchemas } = await import("../src/lib/tools");
@@ -78,7 +78,8 @@ async function main() {
     assert.ok(toolNames.includes("list_goals"), "missing list_goals tool");
     assert.ok(toolNames.includes("create_goal"), "missing create_goal tool");
     assert.ok(toolNames.includes("update_goal"), "missing update_goal tool");
-    assert.ok(toolNames.includes("close_goal"), "missing close_goal tool");
+    assert.ok(toolNames.includes("complete_goal"), "missing complete_goal tool");
+    assert.ok(toolNames.includes("delete_goal"), "missing delete_goal tool");
     assert.ok(toolNames.includes("search_memory"), "missing search_memory tool");
     assert.ok(toolNames.includes("get_session_summary"), "missing get_session_summary tool");
     console.log("[ok] all 6 coach tools defined");
@@ -113,8 +114,8 @@ async function main() {
       { id: "g", title: null, description: null, status: null },
       "update_goal.title/description/status",
     );
-    rejects(coachToolInputSchemas.close_goal, { id: null }, "close_goal.id");
-    rejects(coachToolInputSchemas.close_goal, { id: "g", status: null }, "close_goal.status");
+    rejects(coachToolInputSchemas.complete_goal, { id: null }, "complete_goal.id");
+    rejects(coachToolInputSchemas.delete_goal, { id: null }, "delete_goal.id");
     acceptsNull(coachToolInputSchemas.search_memory, { query: "x", k: null }, "search_memory.k");
     rejects(coachToolInputSchemas.search_memory, { query: null }, "search_memory.query");
     acceptsNull(coachToolInputSchemas.get_session_summary, { sessionId: null }, "get_session_summary.sessionId");

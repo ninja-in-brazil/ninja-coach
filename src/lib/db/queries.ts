@@ -172,7 +172,7 @@ export function listOpenGoals(): Goal[] {
   return db
     .select()
     .from(goals)
-    .where(inArray(goals.status, ["active", "paused"]))
+    .where(eq(goals.status, "active"))
     .orderBy(desc(goals.createdAt))
     .all();
 }
@@ -227,7 +227,7 @@ export function listOpenTodos(): Todo[] {
   return db
     .select()
     .from(todos)
-    .where(inArray(todos.status, ["pending", "in_progress"]))
+    .where(eq(todos.status, "active"))
     .orderBy(asc(todos.createdAt), asc(todos.id))
     .all();
 }
@@ -248,7 +248,7 @@ export function listOpenTodosWithGoal(): TodoWithGoal[] {
     })
     .from(todos)
     .innerJoin(goals, eq(todos.goalId, goals.id))
-    .where(inArray(todos.status, ["pending", "in_progress"]))
+    .where(eq(todos.status, "active"))
     .orderBy(asc(todos.createdAt), asc(todos.id))
     .all();
 }
@@ -272,4 +272,8 @@ export function updateTodo(
 
 export function deleteTodo(id: string): boolean {
   return db.delete(todos).where(eq(todos.id, id)).run().changes > 0;
+}
+
+export function deleteGoal(id: string): boolean {
+  return db.delete(goals).where(eq(goals.id, id)).run().changes > 0;
 }

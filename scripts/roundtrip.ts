@@ -91,10 +91,10 @@ async function main() {
     assert.equal(listGoals().length, 1);
     assert.equal(listGoals("active").length, 1);
 
-    const paused = updateGoalStatus(goal.id, "paused");
-    assert.equal(paused?.status, "paused");
+    const completed = updateGoalStatus(goal.id, "completed");
+    assert.equal(completed?.status, "completed");
     assert.equal(listGoals("active").length, 0);
-    assert.equal(listGoals("paused")?.length, 1);
+    assert.equal(listGoals("completed")?.length, 1);
     console.log("[ok] goals round-trip");
 
     console.log("\nRound-trip passed.");

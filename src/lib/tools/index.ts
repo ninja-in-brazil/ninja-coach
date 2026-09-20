@@ -12,6 +12,7 @@ import {
   createGoal,
   updateGoalStatus,
   getGoal,
+  deleteGoal,
   createTodo,
   getTodo,
   listTodos,
@@ -43,7 +44,7 @@ function formatTranscript(
 export const coachToolInputSchemas = {
   list_goals: z.object({
     status: z
-      .enum(["active", "paused", "completed", "dropped"])
+      .enum(["active", "completed"])
       .nullish()
       .describe("Filter by goal status. Omit for all goals."),
   }),
@@ -65,16 +66,17 @@ export const coachToolInputSchemas = {
       .optional()
       .describe("New description (null to clear)"),
     status: z
-      .enum(["active", "paused", "completed", "dropped"])
+      .enum(["active", "completed"])
       .nullish()
       .describe("New status"),
   }),
 
-  close_goal: z.object({
+  complete_goal: z.object({
     id: z.string().describe("Goal id"),
-    status: z
-      .enum(["completed", "dropped"])
-      .describe("Final status: completed or dropped"),
+  }),
+
+  delete_goal: z.object({
+    id: z.string().describe("Goal id"),
   }),
 
   search_memory: z.object({
@@ -96,7 +98,7 @@ export const coachToolInputSchemas = {
   list_todos: z.object({
     goalId: z.string().nullish().describe("Filter by goal id"),
     status: z
-      .enum(["pending", "in_progress", "completed"])
+      .enum(["active", "completed"])
       .nullish()
       .describe("Filter by todo status. Omit for all todos."),
   }),
@@ -119,7 +121,7 @@ export const coachToolInputSchemas = {
       .optional()
       .describe("New description (null to clear)"),
     status: z
-      .enum(["pending", "in_progress", "completed"])
+      .enum(["active", "completed"])
       .nullish()
       .describe("New status"),
   }),
@@ -181,20 +183,37 @@ export const coachTools = {
     },
   }),
 
-  close_goal: tool({
+  complete_goal: tool({
     description:
-      "Mark a goal as completed or dropped. Use when the user achieves or abandons a goal.",
-    inputSchema: zodSchema(coachToolInputSchemas.close_goal),
+      "Mark a goal as completed. Use when the user achieves a goal.",
+    inputSchema: zodSchema(coachToolInputSchemas.complete_goal),
     execute: async (input) => {
       const existing = getGoal(input.id);
       if (!existing) {
         return `Goal ${input.id} not found.`;
       }
-      const closed = updateGoalStatus(input.id, input.status);
+      const closed = updateGoalStatus(input.id, "completed");
       if (!closed) {
-        return `Failed to close goal ${input.id}.`;
+        return `Failed to complete goal ${input.id}.`;
       }
-      return `Closed goal: ${closed.title} (status: ${closed.status})`;
+      return `Completed goal: ${closed.title} (status: ${closed.status})`;
+    },
+  }),
+
+  delete_goal: tool({
+    description:
+      "Delete a goal completely. Use when the user drops or abandons a goal.",
+    inputSchema: zodSchema(coachToolInputSchemas.delete_goal),
+    execute: async (input) => {
+      const existing = getGoal(input.id);
+      if (!existing) {
+        return `Goal ${input.id} not found.`;
+      }
+      const success = deleteGoal(input.id);
+      if (!success) {
+        return `Failed to delete goal ${input.id}.`;
+      }
+      return `Deleted goal: ${existing.title}`;
     },
   }),
 
