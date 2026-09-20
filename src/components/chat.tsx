@@ -125,8 +125,8 @@ function formatToolOutput(
       .split("\n")
       .filter((l) => l.startsWith("- "))
       .map((l) => {
-        const match = l.match(/^\[[^\]]+\] [^:]+: (.+?)(?:\s*\(goal:.*|\s*—.*)?$/);
-        return match?.[1] ?? l.replace(/\[[^\]]+\] [^:]+: /, "");
+        const match = l.match(/^- \[[^\]]+\] [^:]+: (.+?)(?:\s*\(goal:.*|\s*—.*)?$/);
+        return match?.[1] ?? l.replace(/^- (?:\[[^\]]+\] [^:]+: )?/, "").replace(/(?:\s*\(goal:.*|\s*—.*)$/, "");
       });
     if (titles.length === 0) return null;
     const label = titles.length === 1 ? "todo" : "todos";
