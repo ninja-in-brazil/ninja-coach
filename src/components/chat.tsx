@@ -7,8 +7,13 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { SessionBadge } from "@/components/session-badge";
+import { formatDate, isSameDay } from "@/lib/format";
+import type { Session } from "@/lib/db/schema";
+
 interface ChatProps {
   sessionId: string;
+  session: Session;
   initialMessages: UIMessage[];
 }
 
@@ -140,7 +145,12 @@ function formatToolOutput(
   return text.length > 100 ? text.slice(0, 99) + "…" : text;
 }
 
-export function Chat({ sessionId, initialMessages }: ChatProps) {
+export function Chat({
+  sessionId,
+  session: initialSession,
+  initialMessages,
+}: ChatProps) {
+  const [session, setSession] = useState(initialSession);
   const searchParams = useSearchParams();
   const autostartHandled = useRef(false);
 
@@ -162,6 +172,7 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
 
   const isWorking = status === "submitted" || status === "streaming";
   const canSend = status === "ready" && input.trim().length > 0;
+  const showChatUI = messages.length > 0 || isWorking;
 
   useEffect(() => {
     if (autostartHandled.current) return;
@@ -185,6 +196,12 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
     title: string,
   ) => {
     if (status !== "ready") return;
+    setSession((prev) => ({
+      ...prev,
+      kind,
+      title,
+      updatedAt: new Date(),
+    }));
     try {
       await fetch(`/api/sessions/${sessionId}`, {
         method: "PATCH",
@@ -217,33 +234,52 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {showChatUI && (
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-sm font-semibold tracking-tight">
+                {session.title}
+              </h1>
+              <SessionBadge kind={session.kind} />
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {isSameDay(new Date(session.createdAt), new Date(session.updatedAt))
+                ? formatDate(new Date(session.createdAt))
+                : `Created ${formatDate(new Date(session.createdAt))} · Last active ${formatDate(new Date(session.updatedAt))}`}
+            </p>
+          </div>
+        </div>
+      )}
       <div
         className="flex flex-1 flex-col justify-start gap-4 overflow-y-auto"
         aria-live="polite"
       >
         {messages.length === 0 && (
-          <div className="m-auto max-w-md rounded-2xl border border-zinc-200 p-6 text-center text-sm leading-6 text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-            <p>
-              Your coach is ready. Share a goal, report on last week,
-              or just say hi to get started.
+          <div className="m-auto max-w-md rounded-2xl border border-zinc-200 bg-white/50 p-8 text-center shadow-xs dark:border-zinc-800 dark:bg-zinc-900/50">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              Welcome to Ninja Coach
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Choose a check-in to get started with your coach.
             </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleStartCheckIn("weekly_checkin", "Weekly check-in")}
-                disabled={isWorking}
-                className="cursor-pointer rounded-xl border border-zinc-300 bg-zinc-50 px-3.5 py-2 text-xs font-medium text-zinc-900 shadow-xs hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
-              >
-                Start weekly check-in
-              </button>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => handleStartCheckIn("daily_checkin", "Daily check-in")}
                 disabled={isWorking}
-                className="cursor-pointer rounded-xl border border-zinc-300 bg-zinc-50 px-3.5 py-2 text-xs font-medium text-zinc-900 shadow-xs hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+                className="w-full sm:w-auto cursor-pointer rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
                 Start daily check-in
+              </button>
+              <button
+                type="button"
+                onClick={() => handleStartCheckIn("weekly_checkin", "Weekly check-in")}
+                disabled={isWorking}
+                className="w-full sm:w-auto cursor-pointer rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-sm font-medium text-zinc-900 shadow-xs hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+              >
+                Start weekly check-in
               </button>
             </div>
           </div>
@@ -302,47 +338,49 @@ export function Chat({ sessionId, initialMessages }: ChatProps) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="mt-4 flex flex-col gap-2">
-        {error && (
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-            <span>Something went wrong. Please try again.</span>
-            <button
-              type="button"
-              onClick={() => regenerate()}
-              className="shrink-0 font-medium underline underline-offset-2"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="flex items-end gap-2">
-          <textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Message your coach..."
-            rows={1}
-            className="max-h-40 min-h-[2.75rem] flex-1 resize-none rounded-2xl border border-zinc-300 bg-transparent px-4 py-3 text-sm leading-5 outline-none placeholder:text-zinc-400 focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400"
-          />
-          {isWorking ? (
-            <button
-              type="button"
-              onClick={() => stop()}
-              className="h-11 shrink-0 rounded-2xl border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-            >
-              Stop
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={!canSend}
-              className="h-11 shrink-0 rounded-2xl bg-zinc-900 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
-            >
-              Send
-            </button>
+      {(messages.length > 0 || isWorking || error) && (
+        <div className="mt-4 flex flex-col gap-2">
+          {error && (
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+              <span>Something went wrong. Please try again.</span>
+              <button
+                type="button"
+                onClick={() => regenerate()}
+                className="shrink-0 font-medium underline underline-offset-2"
+              >
+                Retry
+              </button>
+            </div>
           )}
-        </form>
-      </div>
+          <form onSubmit={handleSubmit} className="flex items-end gap-2">
+            <textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message your coach..."
+              rows={1}
+              className="max-h-40 min-h-[2.75rem] flex-1 resize-none rounded-2xl border border-zinc-300 bg-transparent px-4 py-3 text-sm leading-5 outline-none placeholder:text-zinc-400 focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400"
+            />
+            {isWorking ? (
+              <button
+                type="button"
+                onClick={() => stop()}
+                className="h-11 shrink-0 rounded-2xl border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Stop
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!canSend}
+                className="h-11 shrink-0 rounded-2xl bg-zinc-900 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
+              >
+                Send
+              </button>
+            )}
+          </form>
+        </div>
+      )}
     </div>
   );
 }
