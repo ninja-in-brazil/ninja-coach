@@ -26,7 +26,8 @@ function ToolIndicator({ part }: { part: UIMessage["parts"][number] }) {
     list_goals: "Loading goals",
     create_goal: "Creating goal",
     update_goal: "Updating goal",
-    close_goal: "Closing goal",
+    complete_goal: "Completing goal",
+    delete_goal: "Deleting goal",
     get_session_summary: "Loading session summary",
     list_todos: "Loading todos",
     create_todo: "Adding todo",
@@ -98,9 +99,14 @@ function formatToolOutput(
     return match ? `Updated goal: ${match[1]}` : text;
   }
 
-  if (name === "close_goal") {
-    const match = text.match(/^Closed goal: (.+?) \(status: (\w+)\)/);
-    return match ? `Closed goal: ${match[1]} (${match[2]})` : text;
+  if (name === "complete_goal") {
+    const match = text.match(/^Completed goal: (.+?) \(status: (\w+)\)/);
+    return match ? `Completed goal: ${match[1]}` : text;
+  }
+
+  if (name === "delete_goal") {
+    const match = text.match(/^Deleted goal: (.+?)$/);
+    return match ? `Deleted goal: ${match[1]}` : text;
   }
 
   if (name === "search_memory") {
@@ -119,8 +125,8 @@ function formatToolOutput(
       .split("\n")
       .filter((l) => l.startsWith("- "))
       .map((l) => {
-        const match = l.match(/^\[[^\]]+\] [^:]+: (.+?)(?:\s*\(goal:.*|\s*—.*)?$/);
-        return match?.[1] ?? l.replace(/\[[^\]]+\] [^:]+: /, "");
+        const match = l.match(/^- \[[^\]]+\] [^:]+: (.+?)(?:\s*\(goal:.*|\s*—.*)?$/);
+        return match?.[1] ?? l.replace(/^- (?:\[[^\]]+\] [^:]+: )?/, "").replace(/(?:\s*\(goal:.*|\s*—.*)$/, "");
       });
     if (titles.length === 0) return null;
     const label = titles.length === 1 ? "todo" : "todos";
