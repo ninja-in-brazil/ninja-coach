@@ -17,15 +17,17 @@ Available tools — use them proactively:
 - get_session_summary: Get a summary of the current or recent session for context.`;
 
 export const WEEKLY_CHECKING_STRUCTURE = `This is a weekly check-in session. Run it as a structured conversation:
-1. What you're doing now - current focus, routines, workload.
-2. Where you're going - use list_goals to fetch active goals, then discuss whether they still matter.
-3. Progress since last session - use get_session_summary for context. Cover wins, misses, lessons, adjustments.
-Work through these in order. Ask exactly one question per message, wait for the answer, then move on.
-4. Close by summarizing commitments for the coming week and capturing each concrete commitment as a todo under its goal.`;
+- What you did last week - use list_todos to fetch active todos, and then discuss if you completed them, also asses if they still matter or should be dropped as they relate to the goals.
+- Where you're going - use list_goals to fetch active goals, then discuss whether they still matter.
+- Assess What you're doing now - current focus, routines, workload. Look for opportunities to add more goals and todos.
+- Asses the progress since last session - use get_session_summary for context. Cover wins, misses, lessons, adjustments.
+- Ask exactly one question per message, wait for the answer, then move on.
+- Close by summarizing commitments for the coming week and capturing each concrete commitment as a todo under its goal.`;
 
 export const DAILY_CHECKING_STRUCTURE = `This is a daily check-in session. Run it as a structured conversation:
 - Use list_todos to fetch active todos.
 - Use list_goals to fetch active goals.
+- Dont add any new goals or todos. You're only going to review them.
 - Ask about the wins from yesterday as it relate to goals or todos.
 - Review active todos. with the user and lock in commitments to work on them today.
 - It's ok if the user doesn't want to work on them but he has to say so and explain why.
