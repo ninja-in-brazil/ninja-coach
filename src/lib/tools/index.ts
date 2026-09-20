@@ -132,10 +132,10 @@ export const coachToolInputSchemas = {
 export const coachTools = {
   list_goals: tool({
     description:
-      "Fetch the user's current goals. Returns all goals unless a status filter is specified.",
+      "Fetch the user's current goals. Returns active goals unless a status filter is specified.",
     inputSchema: zodSchema(coachToolInputSchemas.list_goals),
     execute: async (input) => {
-      const goals = listGoals(input.status ?? undefined);
+      const goals = listGoals(input.status ?? "active");
       if (goals.length === 0) {
         return "No goals found.";
       }
